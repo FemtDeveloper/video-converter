@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  apiKeys   ApiKey[]
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApiKey {
+  id             String        @id @default(cuid())
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  label          String?
+  keyPrefix      String
+  keyHash        String
+  isActive       Boolean       @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([keyPrefix])
+}
+
+model Job {
+  id               String        @id @default(cuid())
+  organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId   String
+  type             JobType
+  status           JobStatus
+  requestPayload   Json
+  durationSeconds  Int?
+  resultPath       String?
+  outputMimeType   String?
+  outputSizeBytes  Int?
+  errorMessage     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  completedAt      DateTime?
+}
+
+enum JobType {
+  IMAGE_TO_VIDEO
+  SLIDESHOW
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}

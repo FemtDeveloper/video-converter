@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.*
+logs
+coverage
+tmp
+*.log
+Dockerfile.local
+.DS_Store
+data
