@@ -14,6 +14,7 @@ interface CompleteJobOptions {
   resultPath: string;
   outputMimeType: string;
   outputSizeBytes: number;
+  subtitlePath?: string;
 }
 
 @Injectable()
@@ -45,6 +46,7 @@ export class JobsService {
         resultPath: options.resultPath,
         outputMimeType: options.outputMimeType,
         outputSizeBytes: options.outputSizeBytes,
+        resultSubtitlePath: options.subtitlePath,
         completedAt: new Date(),
       },
     });

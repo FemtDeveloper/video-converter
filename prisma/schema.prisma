@@ -40,6 +40,7 @@ model Job {
   requestPayload   Json
   durationSeconds  Int?
   resultPath       String?
+  resultSubtitlePath String?
   outputMimeType   String?
   outputSizeBytes  Int?
   errorMessage     String?
@@ -51,6 +52,7 @@ model Job {
 enum JobType {
   IMAGE_TO_VIDEO
   SLIDESHOW
+  VIDEO_CAPTION
 }
 
 enum JobStatus {

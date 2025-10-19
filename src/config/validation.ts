@@ -6,6 +6,7 @@ export const validationSchema = Joi.object({
   APP_NAME: Joi.string().default('video-converter'),
   API_KEY_HEADER: Joi.string().default('x-api-key'),
   MAX_IMAGE_UPLOAD_MB: Joi.number().positive().max(100).default(5),
+  MAX_VIDEO_UPLOAD_MB: Joi.number().positive().max(2048).default(200),
   MAX_VIDEO_DURATION_SECONDS: Joi.number().positive().max(600).default(70),
   RATE_LIMIT_WINDOW_SECONDS: Joi.number().positive().default(3600),
   RATE_LIMIT_MAX_REQUESTS: Joi.number().positive().default(60),
@@ -16,4 +17,9 @@ export const validationSchema = Joi.object({
   REDIS_URL: Joi.string().uri({ scheme: ['redis'] }).required(),
   INITIAL_API_KEY: Joi.string().min(16).required(),
   LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
+  ASR_BACKEND: Joi.string().valid('vosk', 'whisper', 'mock').default('mock'),
+  WHISPER_MODEL: Joi.string().default('small'),
+  VOSK_MODEL_PATH: Joi.string().allow(''),
+  SUBS_STYLE: Joi.string().default('instagram'),
+  CAPTION_FONT_FILE: Joi.string().allow(''),
 });

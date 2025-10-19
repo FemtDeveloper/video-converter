@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, Min, MaxLength } from 'class-validator';
 
 export class VideoFromImageDto {
   @IsOptional()
@@ -40,4 +40,24 @@ export class VideoFromImageDto {
   @IsOptional()
   @IsString()
   filename?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  captionText?: string;
+
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  captionTextColor?: string;
+
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  captionBackgroundColor?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(16)
+  @Max(120)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  captionFontSize?: number;
 }

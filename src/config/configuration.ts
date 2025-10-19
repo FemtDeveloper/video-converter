@@ -8,6 +8,7 @@ export interface AppConfig {
   limits: {
     maxImageUploadMb: number;
     maxVideoDurationSeconds: number;
+    maxVideoUploadMb: number;
   };
   rateLimit: {
     windowSeconds: number;
@@ -27,6 +28,13 @@ export interface AppConfig {
   security: {
     logLevel: string;
   };
+  captioning: {
+    backend: 'vosk' | 'whisper' | 'mock';
+    whisperModel: string;
+    voskModelPath: string;
+    defaultStyle: string;
+    fontFile: string;
+  };
 }
 
 export const configuration = (): AppConfig => ({
@@ -39,6 +47,7 @@ export const configuration = (): AppConfig => ({
   limits: {
     maxImageUploadMb: parseInt(process.env.MAX_IMAGE_UPLOAD_MB ?? '5', 10),
     maxVideoDurationSeconds: parseInt(process.env.MAX_VIDEO_DURATION_SECONDS ?? '70', 10),
+    maxVideoUploadMb: parseInt(process.env.MAX_VIDEO_UPLOAD_MB ?? '200', 10),
   },
   rateLimit: {
     windowSeconds: parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS ?? '3600', 10),
@@ -58,4 +67,16 @@ export const configuration = (): AppConfig => ({
   security: {
     logLevel: process.env.LOG_LEVEL ?? 'info',
   },
+  captioning: (() => {
+    const backendEnv = (process.env.ASR_BACKEND ?? 'mock').toLowerCase();
+    const backend: 'vosk' | 'whisper' | 'mock' =
+      backendEnv === 'vosk' || backendEnv === 'whisper' ? (backendEnv as 'vosk' | 'whisper') : 'mock';
+    return {
+      backend,
+      whisperModel: process.env.WHISPER_MODEL ?? 'small',
+      voskModelPath: process.env.VOSK_MODEL_PATH ?? '',
+      defaultStyle: process.env.SUBS_STYLE ?? 'instagram',
+      fontFile: process.env.CAPTION_FONT_FILE ?? '',
+    };
+  })(),
 });

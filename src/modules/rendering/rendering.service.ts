@@ -35,6 +35,7 @@ export class RenderingService {
   private readonly tempBasePath: string;
   private readonly outputBasePath: string;
   private readonly maxDurationSeconds: number;
+  private readonly captionFontFile: string | null;
 
   constructor(
     private readonly configService: ConfigService<AppConfig>,
@@ -43,6 +44,8 @@ export class RenderingService {
     this.tempBasePath = this.configService.getOrThrow('paths.temp', { infer: true });
     this.outputBasePath = this.configService.getOrThrow('paths.outputs', { infer: true });
     this.maxDurationSeconds = this.configService.getOrThrow('limits.maxVideoDurationSeconds', { infer: true });
+    const fontFile = this.configService.get('captioning.fontFile', { infer: true });
+    this.captionFontFile = fontFile ? fontFile.trim() || null : null;
   }
 
   private async ensureDirectories(): Promise<void> {
@@ -67,6 +70,10 @@ export class RenderingService {
     const fps = dto.fps ?? 30;
     const backgroundColor = dto.backgroundColor ?? '#000000';
     const format: 'mp4' = dto.format ?? 'mp4';
+    const captionText = dto.captionText?.trim();
+    const captionFontSize = dto.captionFontSize ?? 48;
+    const captionTextColor = dto.captionTextColor ?? '#FFFFFF';
+    const captionBackgroundColor = dto.captionBackgroundColor ?? '#000000';
 
     const extension = mimeExtension(mimeType) || 'bin';
     const sanitizedInputName = this.sanitizeFileName(originalName, extension);
@@ -81,6 +88,10 @@ export class RenderingService {
         backgroundColor,
         originalName,
         mimeType,
+        captionText,
+        captionFontSize,
+        captionTextColor,
+        captionBackgroundColor,
       },
     });
 
@@ -99,6 +110,10 @@ export class RenderingService {
         durationSeconds,
         fps,
         backgroundColor,
+        captionText,
+        captionFontSize,
+        captionTextColor,
+        captionBackgroundColor,
       });
 
       await fs.chmod(outputPath, 0o640);
@@ -139,8 +154,32 @@ export class RenderingService {
     durationSeconds: number;
     fps: number;
     backgroundColor: string;
+    captionText?: string;
+    captionFontSize?: number;
+    captionTextColor?: string;
+    captionBackgroundColor?: string;
   }): Promise<void> {
-    const { inputPath, outputPath, durationSeconds, fps, backgroundColor } = options;
+    const {
+      inputPath,
+      outputPath,
+      durationSeconds,
+      fps,
+      backgroundColor,
+      captionText,
+      captionFontSize,
+      captionTextColor,
+      captionBackgroundColor,
+    } = options;
+
+    const baseFilter = `scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=${backgroundColor},setsar=1`;
+    const filterWithCaption = captionText
+      ? `${baseFilter},${this.buildCaptionFilter({
+          text: captionText,
+          fontSize: captionFontSize ?? 48,
+          textColor: captionTextColor ?? '#FFFFFF',
+          boxColor: captionBackgroundColor ?? '#000000',
+        })}`
+      : baseFilter;
 
     await new Promise<void>((resolve, reject) => {
       ffmpeg(inputPath)
@@ -151,7 +190,7 @@ export class RenderingService {
           '-c:v libx264',
           '-pix_fmt yuv420p',
           '-movflags +faststart',
-          `-vf scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=${backgroundColor},setsar=1`,
+          `-vf ${filterWithCaption}`,
         ])
         .on('error', (error) => reject(error))
         .on('end', () => resolve())
@@ -177,5 +216,58 @@ export class RenderingService {
         this.logger.warn(`Failed to remove temp directory ${dirPath}: ${(error as Error).message}`);
       }
     }
+  }
+
+  private buildCaptionFilter(options: {
+    text: string;
+    fontSize: number;
+    textColor: string;
+    boxColor: string;
+  }): string {
+    const sanitizedText = this.escapeDrawtextText(options.text);
+    const fontColor = this.ffmpegColorFromHex(options.textColor);
+    const boxColor = this.ffmpegColorFromHex(options.boxColor, 0.6);
+    const fontFile = this.captionFontFile;
+    const fontFileFragment = fontFile ? `fontfile=${this.escapeDrawtextPath(fontFile)}` : '';
+
+    const parts = [
+      `drawtext=text=${sanitizedText}`,
+      `fontcolor=${fontColor}`,
+      `fontsize=${options.fontSize}`,
+      'box=1',
+      `boxcolor=${boxColor}`,
+      'boxborderw=40',
+      `x=(w-text_w)/2`,
+      `y=h-(text_h*2.5)`,
+      `line_spacing=8`,
+      `shadowcolor=0x000000@0.4`,
+      'shadowx=0',
+      'shadowy=4',
+    ];
+
+    if (fontFileFragment) {
+      parts.push(fontFileFragment);
+    }
+
+    return parts.join(':');
+  }
+
+  private escapeDrawtextText(text: string): string {
+    return `'${text.replace(/['\\:\n\r]/g, (match) => {
+      if (match === '\n' || match === '\r') {
+        return '\\n';
+      }
+      return `\\${match}`;
+    })}'`;
+  }
+
+  private escapeDrawtextPath(pathValue: string): string {
+    return pathValue.replace(/\\/g, '/').replace(/:/g, '\\\\:');
+  }
+
+  private ffmpegColorFromHex(hexColor: string, alpha = 1): string {
+    const normalized = hexColor.replace('#', '').toUpperCase();
+    const clampedAlpha = Math.min(Math.max(alpha, 0), 1);
+    return `0x${normalized}@${clampedAlpha.toFixed(2)}`;
   }
 }
