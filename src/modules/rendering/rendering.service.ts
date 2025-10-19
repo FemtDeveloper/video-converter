@@ -249,7 +249,7 @@ export class RenderingService {
         borderWidth: captionBorderWidth,
         position: captionPosition,
         fillFrame: dto.fillFrame,
-        boxEnabled: dto.bgEnabled !== false,
+        boxEnabled: dto.bgEnabled === true,
       });
 
       await fs.chmod(outputPath, 0o640);

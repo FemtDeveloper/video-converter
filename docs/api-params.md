@@ -21,6 +21,7 @@ Caption (superpuesto con drawtext):
 - position (Text, opcional): top o bottom.
 - bgColor (Text, opcional): color del fondo de la placa bajo el texto #RRGGBB.
 - bgOpacity (Text, opcional): 0–1; opacidad del fondo (ej. 0.6).
+- bgEnabled (Text, opcional): true|false. Por defecto false (no dibuja placa); si true, dibuja placa con bgColor/bgOpacity.
 
 Respuesta: MP4 (video/mp4). Cabeceras: X-Job-Id.
 
@@ -44,6 +45,7 @@ Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
 - position (Text, opcional): top o bottom.
 - bgColor (Text, opcional): color de fondo de la placa (ASS BackColour) #RRGGBB.
 - bgOpacity (Text, opcional): 0–1; opacidad del fondo (se aplica con BorderStyle=3).
+- bgEnabled (Text, opcional): true|false. Por defecto false (desactiva BackColour); si true, aplica bgColor/bgOpacity.
 
 Respuesta: MP4 (video/mp4) con subtítulos quemados. Cabeceras: `X-Job-Id`, `X-Subtitles-Filename`, `X-Transcript-Backend`.
 

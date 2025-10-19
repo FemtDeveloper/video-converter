@@ -285,7 +285,7 @@ export class CaptioningService {
         position: options.position,
         bgColorHex: options.bgColorHex,
         bgOpacity: options.bgOpacity,
-        bgEnabled: options.bgEnabled,
+        bgEnabled: options.bgEnabled ?? false,
       });
       await fs.writeFile(assPath, assContent, 'utf8');
 
