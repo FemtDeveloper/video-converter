@@ -34,6 +34,7 @@ export interface AppConfig {
     voskModelPath: string;
     defaultStyle: string;
     fontFile: string;
+    fontsDir: string;
   };
 }
 
@@ -77,6 +78,7 @@ export const configuration = (): AppConfig => ({
       voskModelPath: process.env.VOSK_MODEL_PATH ?? '',
       defaultStyle: process.env.SUBS_STYLE ?? 'instagram',
       fontFile: process.env.CAPTION_FONT_FILE ?? '',
+      fontsDir: process.env.CAPTION_FONTS_DIR ?? '',
     };
   })(),
 });

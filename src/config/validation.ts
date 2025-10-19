@@ -22,4 +22,5 @@ export const validationSchema = Joi.object({
   VOSK_MODEL_PATH: Joi.string().allow(''),
   SUBS_STYLE: Joi.string().default('instagram'),
   CAPTION_FONT_FILE: Joi.string().allow(''),
+  CAPTION_FONTS_DIR: Joi.string().allow(''),
 });

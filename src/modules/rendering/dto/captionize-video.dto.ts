@@ -1,15 +1,69 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CaptionizeVideoDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
-  @IsIn(['instagram', 'clean'], { message: 'style must be one of: instagram, clean' })
-  style?: 'instagram' | 'clean';
+  @IsIn(['instagram', 'clean', 'instagram_plus', 'clean_plus', 'upper', 'caption_bar', 'outline_color'], {
+    message: 'style must be one of: instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color',
+  })
+  style?: 'instagram' | 'clean' | 'instagram_plus' | 'clean_plus' | 'upper' | 'caption_bar' | 'outline_color';
 
   @IsOptional()
   @IsString()
   @MaxLength(16)
   @IsIn(['vosk', 'whisper', 'mock'], { message: 'backend must be one of: vosk, whisper, mock' })
   backend?: 'vosk' | 'whisper' | 'mock';
+
+  // Color del texto (PrimaryColour)
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  textColor?: string;
+
+  // Color del borde (OutlineColour)
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  outlineColor?: string;
+
+  // Nuevo: color hexadecimal para el borde del subtítulo (OutlineColour)
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  outlineColorLegacy?: string;
+
+  // Nuevo: tamaño de fuente
+  @IsOptional()
+  @IsInt()
+  @Min(24)
+  @Max(120)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  fontSize?: number;
+
+  // Nuevo: posición del subtítulo
+  @IsOptional()
+  @IsIn(['top', 'bottom'])
+  position?: 'top' | 'bottom';
+
+  // Fondo de la placa (ASS BackColour). No redondea esquinas, es rectangular.
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  bgColor?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const n = Number(value);
+    if (Number.isNaN(n)) return undefined;
+    return Math.max(0, Math.min(1, n));
+  })
+  bgOpacity?: number;
+
+  // Habilitar/deshabilitar fondo (placa). Por defecto: true
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined) return undefined;
+    if (typeof value === 'boolean') return value;
+    return value === 'true' || value === '1';
+  })
+  bgEnabled?: boolean;
 }

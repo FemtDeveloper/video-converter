@@ -128,6 +128,13 @@ export class RenderingController {
       authContext: req.authContext,
       style: dto.style,
       backendOverride: dto.backend,
+      fontSizeOverride: dto.fontSize,
+      outlineColorHex: dto.outlineColor ?? dto.outlineColorLegacy,
+      textColorHex: dto.textColor,
+      bgColorHex: dto.bgColor,
+      bgOpacity: dto.bgOpacity,
+      bgEnabled: dto.bgEnabled,
+      position: dto.position,
     });
 
     res.setHeader('Content-Type', result.outputMimeType);

@@ -344,7 +344,7 @@ docker compose run --rm app npx prisma migrate deploy
 1. `POST {{baseUrl}}/api/v1/video-from-image`
 2. Body `form-data`:
    - `image` (File) -> selecciona la imagen.
-   - Opcionales: `durationSeconds`, `fps`, `captionText`, `captionTextColor`, `captionBackgroundColor`.
+   - Opcionales: `durationSeconds`, `fps`, `captionText`, `textColor`, `bgColor`.
 3. Guarda la respuesta (`Save Response -> Save to a file`).
 4. Revisa cabeceras: `X-Job-Id` y `Content-Disposition`.
 
@@ -358,6 +358,21 @@ docker compose run --rm app npx prisma migrate deploy
 3. Guarda el MP4 devuelto y consulta las cabeceras:
    - `X-Subtitles-Filename`: nombre del `.ass` generado en `OUTPUT_STORAGE_PATH`.
    - `X-Transcript-Backend`: debe mostrar `vosk` si la transcripcion se ejecuto correctamente.
+
+#### Presets visuales disponibles
+
+- Puedes elegir el preset visual con el campo `style` en `form-data`:
+  - `instagram`: barra inferior con buen contraste.
+  - `clean`: texto limpio centrado con outline.
+  - `instagram_plus`: fuente más grande, mayor outline y caja más visible.
+  - `clean_plus`: variante de clean con márgenes y sombra reforzados.
+  - `upper`: subtítulos en la parte superior (evita tapar UI inferior).
+  - `caption_bar`: barra inferior más alta y legible.
+
+- Fuentes personalizadas (opcional):
+  - Monta una carpeta con fuentes: en `docker-compose.yml` añade `- ./fonts:/usr/share/fonts/custom` dentro de `app.volumes`.
+  - En `.env` define `CAPTION_FONTS_DIR=/usr/share/fonts/custom`.
+  - `docker compose up -d` para que FFmpeg/ASS las encuentre al quemar subtítulos.
 
 ### 4. Swagger protegido
 
