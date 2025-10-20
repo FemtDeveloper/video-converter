@@ -1,14 +1,45 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsDefined, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CaptionizeVideoDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
-  @IsIn(['instagram', 'clean', 'instagram_plus', 'clean_plus', 'upper', 'caption_bar', 'outline_color'], {
-    message: 'style must be one of: instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color',
+  @IsIn([
+    'instagram',
+    'clean',
+    'instagram_plus',
+    'clean_plus',
+    'upper',
+    'caption_bar',
+    'outline_color',
+    'yellow_black',
+    'white_blue',
+    'white_black_yellow_outline',
+    'neon_green_black',
+    'red_white',
+    'blue_white',
+    'transparent_outline',
+    'minimal',
+  ], {
+    message: 'style must be one of: instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color, yellow_black, white_blue, white_black_yellow_outline, neon_green_black, red_white, blue_white, transparent_outline, minimal',
   })
-  style?: 'instagram' | 'clean' | 'instagram_plus' | 'clean_plus' | 'upper' | 'caption_bar' | 'outline_color';
+  style?:
+    | 'instagram'
+    | 'clean'
+    | 'instagram_plus'
+    | 'clean_plus'
+    | 'upper'
+    | 'caption_bar'
+    | 'outline_color'
+    | 'yellow_black'
+    | 'white_blue'
+    | 'white_black_yellow_outline'
+    | 'neon_green_black'
+    | 'red_white'
+    | 'blue_white'
+    | 'transparent_outline'
+    | 'minimal';
 
   @IsOptional()
   @IsString()
@@ -105,11 +136,11 @@ export class CaptionizeVideoDto {
   })
   karaokeScale?: number;
 
-  // Idioma para la transcripción (default: 'en')
-  @IsOptional()
-  @IsString()
-  @IsIn(['auto', 'en', 'es', 'pt', 'de', 'hi', 'zh'], {
-    message: 'language must be one of: auto, en, es, pt, de, hi, zh',
+  // Idioma para la transcripción (REQUIRED)
+  @IsDefined({ message: 'language is required' })
+  @IsString({ message: 'language must be a string' })
+  @IsIn(['en', 'es', 'pt', 'de', 'hi', 'zh'], {
+    message: 'language must be one of: en, es, pt, de, hi, zh',
   })
-  language?: 'auto' | 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
+  language!: 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
 }

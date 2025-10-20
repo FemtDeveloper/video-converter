@@ -5,7 +5,7 @@
 Body (multipart/form-data):
 
 - image (File, requerido): JPG/PNG/WebP.
-- style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color.
+ - style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color, yellow_black, white_blue, white_black_yellow_outline, neon_green_black, red_white, blue_white, transparent_outline, minimal.
 - durationSeconds (Text, opcional): 1–120; duración del video resultante.
 - fps (Text, opcional): 1–60; frames por segundo (por defecto 30).
 - backgroundColor (Text, opcional): color de fondo del lienzo 1080x1920 en #RRGGBB.
@@ -36,9 +36,9 @@ Notas:
 Body (multipart/form-data):
 
 - video (File, requerido): MP4/MOV.
-- style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color.
+ - style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color, yellow_black, white_blue, white_black_yellow_outline, neon_green_black, red_white, blue_white, transparent_outline, minimal.
 - backend (Text, opcional): vosk | whisper | mock (por defecto vosk si está configurado).
-- language (Text, opcional): auto | en | es | pt | de | hi | zh. Idioma para la transcripción. Por defecto: auto (detección entre esos idiomas). Si no se reconoce, se devuelve aviso inmediato de "Transcripción no disponible".
+- language (Text, requerido): en | es | pt | de | hi | zh. Idioma para la transcripción. Si falta, la API responde 400 con el mensaje "language is required".
 
 Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
 

@@ -24,7 +24,15 @@ interface CaptionizeOptions {
     | 'clean_plus'
     | 'upper'
     | 'caption_bar'
-    | 'outline_color';
+    | 'outline_color'
+    | 'yellow_black'
+    | 'white_blue'
+    | 'white_black_yellow_outline'
+    | 'neon_green_black'
+    | 'red_white'
+    | 'blue_white'
+    | 'transparent_outline'
+    | 'minimal';
   backendOverride?: 'vosk' | 'whisper' | 'mock';
   fontSizeOverride?: number;
   outlineColorHex?: string;
@@ -37,7 +45,7 @@ interface CaptionizeOptions {
   karaokeMode?: 'k' | 'kf' | 'ko';
   karaokeOffsetMs?: number;
   karaokeScale?: number;
-  language?: 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
+  language: 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
 }
 
 interface CaptionizeResult {
@@ -66,7 +74,15 @@ const STYLE_TEMPLATES: Record<
   | 'clean_plus'
   | 'upper'
   | 'caption_bar'
-  | 'outline_color',
+  | 'outline_color'
+  | 'yellow_black'
+  | 'white_blue'
+  | 'white_black_yellow_outline'
+  | 'neon_green_black'
+  | 'red_white'
+  | 'blue_white'
+  | 'transparent_outline'
+  | 'minimal',
   StylePreset
 > = {
   instagram: {
@@ -196,6 +212,154 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `,
     bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
   },
+  yellow_black: {
+    name: 'Yellow on Black',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,68,&H0000FFFF,&H0000FFFF,&H00000000,&H99000000,0,0,0,0,100,100,0,0,3,5,0,2,80,80,120,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  white_blue: {
+    name: 'White on Blue',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+; BackColour ~#0D6EFD con alpha 0x80
+Style: Default,DejaVu Sans,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80FD6E0D,0,0,0,0,100,100,0,0,3,4,0,2,80,80,120,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  white_black_yellow_outline: {
+    name: 'White with Yellow Outline',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H0000FFFF,&H66000000,-1,0,0,0,100,100,0,0,3,6,0,2,80,80,140,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  neon_green_black: {
+    name: 'Neon Green on Black (black outline)',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+; Primary ~#39FF14 -> &H0014FF39, Outline black, BackColour black alpha 0x99
+Style: Default,DejaVu Sans,72,&H0014FF39,&H0014FF39,&H00000000,&H99000000,-1,0,0,0,100,100,0,0,3,5,0,2,80,80,140,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  red_white: {
+    name: 'Red text, White outline',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+; Primary ~#FF2D2D -> &H002D2DFF, Outline white, no background
+Style: Default,DejaVu Sans,68,&H002D2DFF,&H002D2DFF,&H00FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,5,0,2,80,80,120,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  blue_white: {
+    name: 'Blue on White',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+; Primary ~#1877F2 -> &H00F27718
+Style: Default,DejaVu Sans,68,&H00F27718,&H00F27718,&H00000000,&H99FFFFFF,0,0,0,0,100,100,0,0,3,5,0,2,80,80,120,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  transparent_outline: {
+    name: 'Transparent Background Outline',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,68,&H00FFFFFF,&H00FFFFFF,&H0000FFFF,&H00000000,0,0,0,0,100,100,0,0,1,6,0,2,80,80,120,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
+  minimal: {
+    name: 'Minimal Clean',
+    header: `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+Timer: 100.0000
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,56,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,80,80,100,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`,
+    bodyTemplate: 'Dialogue: 0,{start},{end},Default,,0,0,0,,{text}',
+  },
 };
 
 @Injectable()
@@ -263,14 +427,14 @@ export class CaptioningService {
 
     try {
       const durationSeconds = await this.getVideoDurationSeconds(inputPath);
-      await this.extractAudioToWav(inputPath, audioPath);
+      await this.ensureAudioWav(inputPath, audioPath, durationSeconds);
 
       const transcription = await this.subtitleTranscriber.transcribe(
         audioPath,
         {
           backend: backendOverride,
           approximateDurationSeconds: durationSeconds,
-          language: options.language ?? 'auto',
+          language: options.language,
         },
       );
 
@@ -369,7 +533,15 @@ export class CaptioningService {
       | 'clean_plus'
       | 'upper'
       | 'caption_bar'
-      | 'outline_color',
+      | 'outline_color'
+      | 'yellow_black'
+      | 'white_blue'
+      | 'white_black_yellow_outline'
+      | 'neon_green_black'
+      | 'red_white'
+      | 'blue_white'
+      | 'transparent_outline'
+      | 'minimal',
   ): StylePreset {
     if (style && (STYLE_TEMPLATES as any)[style]) {
       return STYLE_TEMPLATES[style];
@@ -389,6 +561,51 @@ export class CaptioningService {
         .on('end', () => resolve())
         .save(audioPath);
     });
+  }
+
+  private async hasAudioStream(filePath: string): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      ffmpeg.ffprobe(filePath, (error, metadata) => {
+        if (error) {
+          resolve(false);
+          return;
+        }
+        const hasAudio = (metadata.streams || []).some((s) => s.codec_type === 'audio');
+        resolve(hasAudio);
+      });
+    });
+  }
+
+  private async buildSilenceWav(durationSeconds: number, audioPath: string): Promise<void> {
+    const dur = Math.max(1, Math.round(durationSeconds));
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg('anullsrc=channel_layout=mono:sample_rate=16000')
+        .inputOptions(['-f', 'lavfi'])
+        .outputOptions(['-t', String(dur), '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1'])
+        .format('wav')
+        .on('error', (error) => reject(error))
+        .on('end', () => resolve())
+        .save(audioPath);
+    });
+  }
+
+  private async ensureAudioWav(
+    inputPath: string,
+    audioPath: string,
+    durationSeconds: number,
+  ): Promise<void> {
+    const hasAudio = await this.hasAudioStream(inputPath);
+    if (!hasAudio) {
+      await this.buildSilenceWav(durationSeconds, audioPath);
+      return;
+    }
+    try {
+      await this.extractAudioToWav(inputPath, audioPath);
+    } catch (error) {
+      // Fallback a silencio si la extracción falla por cualquier motivo
+      this.logger.warn(`Falling back to silent audio: ${(error as Error).message}`);
+      await this.buildSilenceWav(durationSeconds, audioPath);
+    }
   }
 
   private async getVideoDurationSeconds(filePath: string): Promise<number> {
@@ -584,17 +801,22 @@ export class CaptioningService {
   }): Promise<void> {
     const filter = this.buildAssFilter(options.assPath);
 
+    const hasAudio = await this.hasAudioStream(options.inputPath);
+    const baseOpts = [
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart',
+      '-vf', filter,
+    ];
+
+    // Si no hay audio, deshabilitar pista de audio; si hay, copiarla
+    const audioOpts = hasAudio ? ['-c:a', 'copy'] : ['-an'];
+
     await new Promise<void>((resolve, reject) => {
       ffmpeg(options.inputPath)
-        .outputOptions([
-          '-preset', 'veryfast',
-          '-crf', '20',
-          '-c:v', 'libx264',
-          '-pix_fmt', 'yuv420p',
-          '-movflags', '+faststart',
-          '-c:a', 'copy',
-          '-vf', filter,
-        ])
+        .outputOptions([...baseOpts, ...audioOpts])
         .on('error', (error) => reject(error))
         .on('end', () => resolve())
         .save(options.outputPath);

@@ -5,10 +5,41 @@ export class VideoFromImageDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
-  @IsIn(['instagram', 'clean', 'instagram_plus', 'clean_plus', 'upper', 'caption_bar', 'outline_color'], {
-    message: 'style must be one of: instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color',
+  @IsIn([
+    'instagram',
+    'clean',
+    'instagram_plus',
+    'clean_plus',
+    'upper',
+    'caption_bar',
+    'outline_color',
+    'yellow_black',
+    'white_blue',
+    'white_black_yellow_outline',
+    'neon_green_black',
+    'red_white',
+    'blue_white',
+    'transparent_outline',
+    'minimal',
+  ], {
+    message: 'style must be one of: instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color, yellow_black, white_blue, white_black_yellow_outline, neon_green_black, red_white, blue_white, transparent_outline, minimal',
   })
-  style?: 'instagram' | 'clean' | 'instagram_plus' | 'clean_plus' | 'upper' | 'caption_bar' | 'outline_color';
+  style?:
+    | 'instagram'
+    | 'clean'
+    | 'instagram_plus'
+    | 'clean_plus'
+    | 'upper'
+    | 'caption_bar'
+    | 'outline_color'
+    | 'yellow_black'
+    | 'white_blue'
+    | 'white_black_yellow_outline'
+    | 'neon_green_black'
+    | 'red_white'
+    | 'blue_white'
+    | 'transparent_outline'
+    | 'minimal';
   @IsOptional()
   @IsIn(['mp4'])
   format?: 'mp4';

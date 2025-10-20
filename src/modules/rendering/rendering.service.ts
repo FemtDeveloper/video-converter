@@ -85,7 +85,15 @@ export class RenderingService {
       | 'clean_plus'
       | 'upper'
       | 'caption_bar'
-      | 'outline_color',
+      | 'outline_color'
+      | 'yellow_black'
+      | 'white_blue'
+      | 'white_black_yellow_outline'
+      | 'neon_green_black'
+      | 'red_white'
+      | 'blue_white'
+      | 'transparent_outline'
+      | 'minimal',
   ): {
     textColor: string;
     outlineColor: string;
@@ -166,6 +174,86 @@ export class RenderingService {
           position: 'bottom',
           bgColor: '#000000',
           bgOpacity: 0.0, // normalmente sin placa para este preset
+        };
+      case 'yellow_black':
+        return {
+          textColor: '#FFFF00',
+          outlineColor: '#000000',
+          outlineWidth: 5,
+          fontSize: 68,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.6,
+        };
+      case 'white_blue':
+        return {
+          textColor: '#FFFFFF',
+          outlineColor: '#000000',
+          outlineWidth: 4,
+          fontSize: 64,
+          position: 'bottom',
+          bgColor: '#0D6EFD',
+          bgOpacity: 0.5,
+        };
+      case 'white_black_yellow_outline':
+        return {
+          textColor: '#FFFFFF',
+          outlineColor: '#FFFF00',
+          outlineWidth: 6,
+          fontSize: 72,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.6,
+        };
+      case 'neon_green_black':
+        return {
+          textColor: '#39FF14',
+          outlineColor: '#000000',
+          outlineWidth: 5,
+          fontSize: 72,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.6,
+        };
+      case 'red_white':
+        return {
+          textColor: '#FF2D2D',
+          outlineColor: '#FFFFFF',
+          outlineWidth: 5,
+          fontSize: 68,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.0,
+        };
+      case 'blue_white':
+        return {
+          textColor: '#1877F2',
+          outlineColor: '#000000',
+          outlineWidth: 5,
+          fontSize: 68,
+          position: 'bottom',
+          bgColor: '#FFFFFF',
+          bgOpacity: 0.8,
+        };
+      case 'transparent_outline':
+        return {
+          textColor: '#FFFFFF',
+          outlineColor: '#FFFF00',
+          outlineWidth: 6,
+          fontSize: 68,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.0,
+        };
+      case 'minimal':
+        return {
+          textColor: '#FFFFFF',
+          outlineColor: '#000000',
+          outlineWidth: 2,
+          fontSize: 56,
+          position: 'bottom',
+          bgColor: '#000000',
+          bgOpacity: 0.0,
         };
       default:
         return {

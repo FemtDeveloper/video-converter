@@ -42,7 +42,7 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
     options?: {
       backend?: SupportedBackend;
       approximateDurationSeconds?: number;
-      language?: SupportedLanguage | 'auto';
+      language: SupportedLanguage;
     },
   ): Promise<{
     segments: SubtitleSegment[];
@@ -52,22 +52,8 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
     const backend = options?.backend ?? this.defaultBackend;
 
     if (backend === 'vosk') {
-      let lang = (options?.language ?? 'auto') as SupportedLanguage | 'auto';
-      let modelPath: string;
-      if (lang === 'auto') {
-        const detected = await this.detectLanguageWithVosk(audioPath);
-        if (!detected) {
-          this.logger.warn('Language detection failed; returning mock segment');
-          return {
-            segments: this.buildMockSegments(options?.approximateDurationSeconds),
-            backend: 'mock',
-          };
-        }
-        lang = detected.lang as SupportedLanguage;
-        modelPath = detected.modelPath;
-      } else {
-        modelPath = this.resolveVoskModelPath(lang);
-      }
+      const lang = options?.language as SupportedLanguage;
+      const modelPath = this.resolveVoskModelPath(lang);
       const result = await this.transcribeWithVosk(
         audioPath,
         modelPath,
@@ -161,75 +147,6 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
   private resolveVoskModelPath(lang: SupportedLanguage): string {
     const p = this.voskModelPaths?.[lang];
     return (p && p.trim()) || this.voskModelPath || '';
-  }
-
-  private async detectLanguageWithVosk(
-    audioPath: string,
-  ): Promise<{ lang: SupportedLanguage; modelPath: string } | null> {
-    const candidates: { lang: SupportedLanguage; modelPath: string }[] = [];
-    (['en', 'es', 'pt', 'de', 'hi', 'zh'] as SupportedLanguage[]).forEach(
-      (lang) => {
-        const p = this.resolveVoskModelPath(lang);
-        if (p && existsSync(p)) {
-          candidates.push({ lang, modelPath: p });
-        }
-      },
-    );
-    if (candidates.length === 0) {
-      return null;
-    }
-    const MAX_SECONDS = 8; // analiza hasta 8 segundos
-    let best: { lang: SupportedLanguage; modelPath: string; score: number } | null = null;
-    for (const c of candidates) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { spawn } = require('child_process');
-        const scriptPath = '/app/scripts/asr_vosk.py';
-        const args = [
-          '--model-dir',
-          c.modelPath,
-          '--audio',
-          audioPath,
-          '--max-seconds',
-          String(MAX_SECONDS),
-        ];
-        const proc = spawn('python3', [scriptPath, ...args], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-        });
-        let stdout = '';
-        let stderr = '';
-        proc.stdout.on('data', (d: Buffer) => (stdout += d.toString('utf8')));
-        proc.stderr.on('data', (d: Buffer) => (stderr += d.toString('utf8')));
-        const exitCode: number = await new Promise((resolve) =>
-          proc.on('close', resolve),
-        );
-        if (exitCode !== 0) {
-          this.logger.warn(
-            `Language probe failed for ${c.lang} with code ${exitCode}: ${stderr || stdout}`,
-          );
-          continue;
-        }
-        const parsed = JSON.parse(stdout);
-        const wordsRaw: any[] = Array.isArray(parsed?.words)
-          ? parsed.words
-          : [];
-        const score = wordsRaw.filter(
-          (w) => w && typeof w.word === 'string' && w.word.trim().length > 0,
-        ).length;
-        if (!best || score > best.score) {
-          best = { ...c, score };
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Probe error for ${c.lang}: ${(error as Error).message}`,
-        );
-      }
-    }
-    if (!best || best.score < 3) {
-      // muy pocas palabras: assume no reconocimiento
-      return null;
-    }
-    return { lang: best.lang, modelPath: best.modelPath };
   }
 
   private mapWordItem(item: any): WordSegment {
