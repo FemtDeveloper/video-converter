@@ -134,6 +134,8 @@ export class RenderingController {
       bgColorHex: dto.bgColor,
       bgOpacity: dto.bgOpacity,
       bgEnabled: dto.bgEnabled,
+      karaoke: dto.karaoke,
+      karaokeMode: dto.karaokeMode,
       position: dto.position,
     });
 

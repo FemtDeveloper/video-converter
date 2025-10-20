@@ -33,6 +33,8 @@ interface CaptionizeOptions {
   bgColorHex?: string;
   bgOpacity?: number;
   bgEnabled?: boolean;
+  karaoke?: boolean;
+  karaokeMode?: 'k' | 'kf' | 'ko';
 }
 
 interface CaptionizeResult {
@@ -200,6 +202,7 @@ export class CaptioningService {
   private readonly outputBasePath: string;
   private readonly defaultStyle: 'instagram' | 'clean';
   private readonly captionFontsDir: string | null;
+  private readonly defaultKaraokeMode: 'k' | 'kf' | 'ko' = 'kf';
 
   constructor(
     private readonly configService: ConfigService<AppConfig>,
@@ -286,7 +289,7 @@ export class CaptioningService {
         bgColorHex: options.bgColorHex,
         bgOpacity: options.bgOpacity,
         bgEnabled: options.bgEnabled ?? false,
-      });
+      }, { karaoke: options.karaoke === true, words: transcription.words, mode: options.karaokeMode ?? this.defaultKaraokeMode });
       await fs.writeFile(assPath, assContent, 'utf8');
 
       const outputFileName = this.buildOutputFileName(job.id);
@@ -408,6 +411,7 @@ export class CaptioningService {
       bgOpacity?: number;
       bgEnabled?: boolean;
     },
+    extras?: { karaoke?: boolean; words?: { word: string; start: number; end: number }[]; mode?: 'k' | 'kf' | 'ko' },
   ): string {
     const header = overrides
       ? this.applyStyleOverrides(style.header, overrides)
@@ -416,15 +420,46 @@ export class CaptioningService {
       .map((segment) => {
         const start = this.formatAssTimestamp(segment.start);
         const end = this.formatAssTimestamp(segment.end);
-        const text = this.escapeAssText(segment.text);
-        return style.bodyTemplate
-          .replace('{start}', start)
-          .replace('{end}', end)
-          .replace('{text}', text);
+
+        if (extras?.karaoke && extras.words && extras.words.length > 0) {
+          const text = this.buildKaraokeTextForSegment(segment, extras.words, extras.mode ?? 'kf');
+          return style.bodyTemplate
+            .replace('{start}', start)
+            .replace('{end}', end)
+            .replace('{text}', text);
+        } else {
+          const text = this.escapeAssText(segment.text);
+          return style.bodyTemplate
+            .replace('{start}', start)
+            .replace('{end}', end)
+            .replace('{text}', text);
+        }
       })
       .join('\n');
 
     return `${header}${body}\n`;
+  }
+
+  private buildKaraokeTextForSegment(
+    segment: { start: number; end: number; text: string },
+    words: { word: string; start: number; end: number }[],
+    mode: 'k' | 'kf' | 'ko' = 'kf',
+  ): string {
+    const EPS = 0.03; // tolerancia 30 ms
+    const inSeg = words.filter((w) => (w.start >= segment.start - EPS) && (w.end <= segment.end + EPS));
+    if (inSeg.length === 0) {
+      return this.escapeAssText(segment.text);
+    }
+    const parts: string[] = [];
+    for (let i = 0; i < inSeg.length; i++) {
+      const w = inSeg[i];
+      const dur = Math.max(1, Math.round((w.end - w.start) * 100)); // centisegundos
+      const tag = `{\\${mode}${dur}}`;
+      const safe = this.escapeAssText(w.word);
+      const sep = i < inSeg.length - 1 ? ' ' : '';
+      parts.push(`${tag}${safe}${sep}`);
+    }
+    return parts.join('');
   }
 
   private applyStyleOverrides(

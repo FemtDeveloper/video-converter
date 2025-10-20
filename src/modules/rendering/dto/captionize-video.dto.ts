@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CaptionizeVideoDto {
@@ -66,4 +66,21 @@ export class CaptionizeVideoDto {
     return value === 'true' || value === '1';
   })
   bgEnabled?: boolean;
+
+  // Habilita resaltado tipo karaoke (palabra por palabra)
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === undefined) return undefined;
+    if (typeof value === 'boolean') return value;
+    return value === 'true' || value === '1';
+  })
+  karaoke?: boolean;
+
+  // Modo de karaoke: 'k' (discreto), 'kf' (barrido/fill), 'ko' (outline)
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  @IsIn(['k', 'kf', 'ko'], { message: 'karaokeMode must be one of: k, kf, ko' })
+  karaokeMode?: 'k' | 'kf' | 'ko';
 }

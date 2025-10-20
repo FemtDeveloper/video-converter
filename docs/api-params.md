@@ -29,6 +29,8 @@ Notas:
 - El video final siempre es 1080x1920 con la imagen centrada y relleno del color de fondo.
 - Si no envías captionText, no se dibuja texto.
 
+---
+
 ### POST /api/v1/captionize
 
 Body (multipart/form-data):
@@ -46,9 +48,12 @@ Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
 - bgColor (Text, opcional): color de fondo de la placa (ASS BackColour) #RRGGBB.
 - bgOpacity (Text, opcional): 0–1; opacidad del fondo (se aplica con BorderStyle=3).
 - bgEnabled (Text, opcional): true|false. Por defecto false (desactiva BackColour); si true, aplica bgColor/bgOpacity.
+- karaoke (Text, opcional): true|false. Si true, resalta palabra por palabra usando tiempos del ASR.
+- karaokeMode (Text, opcional): k | kf | ko. Modo de karaoke (discreto, barrido/fill o outline). Por defecto: kf.
 
 Respuesta: MP4 (video/mp4) con subtítulos quemados. Cabeceras: `X-Job-Id`, `X-Subtitles-Filename`, `X-Transcript-Backend`.
 
 Notas:
 - Para transcripción real en español, monta el modelo Vosk y define `ASR_BACKEND=vosk` y `VOSK_MODEL_PATH`.
 - Si el audio no coincide con el idioma del modelo, la transcripción puede ser vacía.
+

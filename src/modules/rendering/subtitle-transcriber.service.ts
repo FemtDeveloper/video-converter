@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createReadStream, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { AppConfig } from '../../config/configuration';
 
 export interface SubtitleSegment {
@@ -9,13 +9,13 @@ export interface SubtitleSegment {
   text: string;
 }
 
-type SupportedBackend = 'vosk' | 'whisper' | 'mock';
-
-interface WordSegment {
+export interface WordSegment {
   word: string;
   start: number;
   end: number;
 }
+
+type SupportedBackend = 'vosk' | 'whisper' | 'mock';
 
 @Injectable()
 export class SubtitleTranscriberService implements OnModuleDestroy {
@@ -35,18 +35,24 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
   async transcribe(
     audioPath: string,
     options?: { backend?: SupportedBackend; approximateDurationSeconds?: number },
-  ): Promise<{ segments: SubtitleSegment[]; backend: SupportedBackend }> {
+  ): Promise<{ segments: SubtitleSegment[]; backend: SupportedBackend; words?: WordSegment[] }> {
     const backend = options?.backend ?? this.defaultBackend;
 
     if (backend === 'vosk') {
-      const segments = await this.transcribeWithVosk(audioPath, options?.approximateDurationSeconds);
-      if (segments.length > 0) {
-        return { segments, backend };
+      const result = await this.transcribeWithVosk(
+        audioPath,
+        options?.approximateDurationSeconds,
+      );
+      if (result.segments.length > 0) {
+        return { segments: result.segments, backend, words: result.words };
       }
-      this.logger.warn('Vosk transcription returned no segments, falling back to mock captions');
+      this.logger.warn(
+        'Vosk transcription returned no segments, falling back to mock captions',
+      );
       return {
         segments: this.buildMockSegments(options?.approximateDurationSeconds),
         backend: 'mock',
+        words: result.words,
       };
     }
 
@@ -65,45 +71,59 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
   private async transcribeWithVosk(
     audioPath: string,
     approximateDurationSeconds?: number,
-  ): Promise<SubtitleSegment[]> {
+  ): Promise<{ segments: SubtitleSegment[]; words: WordSegment[] }> {
     if (!this.voskModelPath) {
       this.logger.warn('VOSK_MODEL_PATH is not configured');
-      return [];
+      return { segments: [], words: [] };
     }
 
     if (!existsSync(this.voskModelPath)) {
       this.logger.error(`Vosk model path "${this.voskModelPath}" does not exist`);
-      return [];
+      return { segments: [], words: [] };
     }
 
     // Prefer Python Vosk fallback to avoid Node ffi-napi build issues
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { spawn } = require('child_process');
       const scriptPath = '/app/scripts/asr_vosk.py';
       const args = ['--model-dir', this.voskModelPath, '--audio', audioPath];
-      const proc = spawn('python3', [scriptPath, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+      const proc = spawn('python3', [scriptPath, ...args], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
 
       let stdout = '';
       let stderr = '';
       proc.stdout.on('data', (d: Buffer) => (stdout += d.toString('utf8')));
       proc.stderr.on('data', (d: Buffer) => (stderr += d.toString('utf8')));
 
-      const exitCode: number = await new Promise((resolve) => proc.on('close', resolve));
+      const exitCode: number = await new Promise((resolve) =>
+        proc.on('close', resolve),
+      );
 
       if (exitCode !== 0) {
-        this.logger.error(`Python vosk exited with code ${exitCode}: ${stderr || stdout}`);
-        return [];
+        this.logger.error(
+          `Python vosk exited with code ${exitCode}: ${stderr || stdout}`,
+        );
+        return { segments: [], words: [] };
       }
 
       const parsed = JSON.parse(stdout);
-      const segments = Array.isArray(parsed?.segments) ? parsed.segments : [];
+      const segments: SubtitleSegment[] = Array.isArray(parsed?.segments)
+        ? parsed.segments
+        : [];
+      const wordsRaw: any[] = Array.isArray(parsed?.words) ? parsed.words : [];
+      const words: WordSegment[] = wordsRaw.map((w) => this.mapWordItem(w));
       if (!segments.length && approximateDurationSeconds) {
-        return this.buildMockSegments(approximateDurationSeconds);
+        return {
+          segments: this.buildMockSegments(approximateDurationSeconds),
+          words,
+        };
       }
-      return segments;
+      return { segments, words };
     } catch (error) {
       this.logger.error('Python vosk pipeline failed', error as Error);
-      return [];
+      return { segments: [], words: [] };
     }
   }
 
@@ -164,7 +184,9 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
     return segments;
   }
 
-  private buildMockSegments(approximateDurationSeconds?: number): SubtitleSegment[] {
+  private buildMockSegments(
+    approximateDurationSeconds?: number,
+  ): SubtitleSegment[] {
     const duration = Math.max(approximateDurationSeconds ?? 5, 2);
     const midpoint = Math.min(duration, 6);
     return [
@@ -182,10 +204,13 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
       try {
         this.voskModel.free();
       } catch (error) {
-        this.logger.warn(`Failed to free Vosk model: ${(error as Error).message}`);
+        this.logger.warn(
+          `Failed to free Vosk model: ${(error as Error).message}`,
+        );
       } finally {
         this.voskModel = null;
       }
     }
   }
 }
+

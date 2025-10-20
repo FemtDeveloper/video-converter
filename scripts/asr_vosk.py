@@ -88,9 +88,9 @@ def main():
         words.extend(final["result"])
 
     segments = group_words(words)
-    print(json.dumps({"segments": segments}))
+    # Devolver tanto segmentos (para compatibilidad) como palabras crudas con tiempos
+    print(json.dumps({"segments": segments, "words": words}))
 
 
 if __name__ == "__main__":
     main()
-
