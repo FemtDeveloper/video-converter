@@ -19,6 +19,7 @@ def group_words(words: List[Dict]) -> List[Dict]:
 
     MAX_WORDS = 14
     MAX_DURATION = 4.5
+    GAP_FLUSH = 0.35  # segundos: si hay pausa >= 350ms, corta segmento
     buffer = []
 
     def flush():
@@ -39,6 +40,10 @@ def group_words(words: List[Dict]) -> List[Dict]:
     for w in words:
         if not w.get("word"):
             continue
+        if buffer:
+            gap = w.get("start", 0) - buffer[-1].get("end", 0)
+            if gap >= GAP_FLUSH:
+                flush()
         buffer.append(w)
         if len(buffer) >= MAX_WORDS or (buffer[-1]["end"] - buffer[0]["start"]) >= MAX_DURATION:
             flush()

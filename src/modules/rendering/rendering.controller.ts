@@ -136,6 +136,8 @@ export class RenderingController {
       bgEnabled: dto.bgEnabled,
       karaoke: dto.karaoke,
       karaokeMode: dto.karaokeMode,
+      karaokeOffsetMs: dto.karaokeOffsetMs,
+      karaokeScale: dto.karaokeScale,
       position: dto.position,
     });
 

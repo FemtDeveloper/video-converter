@@ -35,6 +35,8 @@ interface CaptionizeOptions {
   bgEnabled?: boolean;
   karaoke?: boolean;
   karaokeMode?: 'k' | 'kf' | 'ko';
+  karaokeOffsetMs?: number;
+  karaokeScale?: number;
 }
 
 interface CaptionizeResult {
@@ -289,7 +291,7 @@ export class CaptioningService {
         bgColorHex: options.bgColorHex,
         bgOpacity: options.bgOpacity,
         bgEnabled: options.bgEnabled ?? false,
-      }, { karaoke: options.karaoke === true, words: transcription.words, mode: options.karaokeMode ?? this.defaultKaraokeMode });
+      }, { karaoke: options.karaoke === true, words: transcription.words, mode: options.karaokeMode ?? this.defaultKaraokeMode, offsetMs: options.karaokeOffsetMs ?? 0, scale: options.karaokeScale ?? 1 });
       await fs.writeFile(assPath, assContent, 'utf8');
 
       const outputFileName = this.buildOutputFileName(job.id);
@@ -411,7 +413,7 @@ export class CaptioningService {
       bgOpacity?: number;
       bgEnabled?: boolean;
     },
-    extras?: { karaoke?: boolean; words?: { word: string; start: number; end: number }[]; mode?: 'k' | 'kf' | 'ko' },
+    extras?: { karaoke?: boolean; words?: { word: string; start: number; end: number }[]; mode?: 'k' | 'kf' | 'ko'; offsetMs?: number; scale?: number },
   ): string {
     const header = overrides
       ? this.applyStyleOverrides(style.header, overrides)
@@ -422,7 +424,7 @@ export class CaptioningService {
         const end = this.formatAssTimestamp(segment.end);
 
         if (extras?.karaoke && extras.words && extras.words.length > 0) {
-          const text = this.buildKaraokeTextForSegment(segment, extras.words, extras.mode ?? 'kf');
+          const text = this.buildKaraokeTextForSegment(segment, extras.words, extras.mode ?? 'kf', extras.offsetMs ?? 0, extras.scale ?? 1);
           return style.bodyTemplate
             .replace('{start}', start)
             .replace('{end}', end)
@@ -444,18 +446,40 @@ export class CaptioningService {
     segment: { start: number; end: number; text: string },
     words: { word: string; start: number; end: number }[],
     mode: 'k' | 'kf' | 'ko' = 'kf',
+    offsetMs = 0,
+    scale = 1,
   ): string {
     const EPS = 0.03; // tolerancia 30 ms
-    const inSeg = words.filter((w) => (w.start >= segment.start - EPS) && (w.end <= segment.end + EPS));
+    const offsetSec = (offsetMs || 0) / 1000;
+    const segStart = segment.start;
+    const segEnd = segment.end;
+    // Seleccionar palabras que solapan con el segmento (no solo contenidas)
+    const inSeg = words
+      .map((w) => ({
+        word: w.word,
+        start: w.start + offsetSec,
+        end: w.end + offsetSec,
+      }))
+      .filter((w) => w.end >= segStart - EPS && w.start <= segEnd + EPS);
     if (inSeg.length === 0) {
       return this.escapeAssText(segment.text);
     }
+    const targetCs = Math.max(1, Math.round((segEnd - segStart) * 100));
+    const baseDurations = inSeg.map((w) => Math.max(1, Math.round((w.end - w.start) * 100 * (scale || 1))));
+    let sumCs = baseDurations.reduce((a, b) => a + b, 0);
+    // Ajustar suma al target distribuyendo el error
     const parts: string[] = [];
+    if (sumCs !== targetCs && inSeg.length > 0) {
+      const diff = targetCs - sumCs;
+      // Ajusta en el último token para evitar números negativos
+      baseDurations[baseDurations.length - 1] = Math.max(1, baseDurations[baseDurations.length - 1] + diff);
+      sumCs = baseDurations.reduce((a, b) => a + b, 0);
+    }
+
     for (let i = 0; i < inSeg.length; i++) {
-      const w = inSeg[i];
-      const dur = Math.max(1, Math.round((w.end - w.start) * 100)); // centisegundos
+      const dur = baseDurations[i];
       const tag = `{\\${mode}${dur}}`;
-      const safe = this.escapeAssText(w.word);
+      const safe = this.escapeAssText(inSeg[i].word);
       const sep = i < inSeg.length - 1 ? ' ' : '';
       parts.push(`${tag}${safe}${sep}`);
     }

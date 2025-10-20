@@ -50,10 +50,11 @@ Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
 - bgEnabled (Text, opcional): true|false. Por defecto false (desactiva BackColour); si true, aplica bgColor/bgOpacity.
 - karaoke (Text, opcional): true|false. Si true, resalta palabra por palabra usando tiempos del ASR.
 - karaokeMode (Text, opcional): k | kf | ko. Modo de karaoke (discreto, barrido/fill o outline). Por defecto: kf.
+ - karaokeOffsetMs (Text, opcional): entero -1000..1000. Desplaza el resaltado (ms). Útil para ajustar si notas que el highlight va “tarde” o “temprano”.
+ - karaokeScale (Text, opcional): factor 0.5–2.0. Escala la duración de cada palabra (1 = sin cambio).
 
 Respuesta: MP4 (video/mp4) con subtítulos quemados. Cabeceras: `X-Job-Id`, `X-Subtitles-Filename`, `X-Transcript-Backend`.
 
 Notas:
 - Para transcripción real en español, monta el modelo Vosk y define `ASR_BACKEND=vosk` y `VOSK_MODEL_PATH`.
 - Si el audio no coincide con el idioma del modelo, la transcripción puede ser vacía.
-

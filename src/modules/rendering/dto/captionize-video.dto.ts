@@ -83,4 +83,25 @@ export class CaptionizeVideoDto {
   @MaxLength(2)
   @IsIn(['k', 'kf', 'ko'], { message: 'karaokeMode must be one of: k, kf, ko' })
   karaokeMode?: 'k' | 'kf' | 'ko';
+
+  // Ajuste fino de sincronía (ms). Permite adelantar(+)/atrasar(-) el resaltado
+  @IsOptional()
+  @IsInt()
+  @Min(-1000)
+  @Max(1000)
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
+  karaokeOffsetMs?: number;
+
+  // Escala de duración por palabra (0.5–2.0)
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const n = Number(value);
+    if (Number.isNaN(n)) return undefined;
+    return n;
+  })
+  @IsIn([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2], {
+    message: 'karaokeScale must be between 0.5 and 2.0',
+  })
+  karaokeScale?: number;
 }
