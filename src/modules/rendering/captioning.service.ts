@@ -37,6 +37,7 @@ interface CaptionizeOptions {
   karaokeMode?: 'k' | 'kf' | 'ko';
   karaokeOffsetMs?: number;
   karaokeScale?: number;
+  language?: 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
 }
 
 interface CaptionizeResult {
@@ -269,6 +270,7 @@ export class CaptioningService {
         {
           backend: backendOverride,
           approximateDurationSeconds: durationSeconds,
+          language: options.language ?? 'auto',
         },
       );
 

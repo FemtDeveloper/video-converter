@@ -138,6 +138,7 @@ export class RenderingController {
       karaokeMode: dto.karaokeMode,
       karaokeOffsetMs: dto.karaokeOffsetMs,
       karaokeScale: dto.karaokeScale,
+      language: dto.language,
       position: dto.position,
     });
 

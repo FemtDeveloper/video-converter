@@ -56,6 +56,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", required=True)
     parser.add_argument("--audio", required=True, help="Path to mono 16kHz WAV file")
+    parser.add_argument("--max-seconds", type=float, default=0.0, help="Process at most N seconds of audio (0 = no limit)")
     args = parser.parse_args()
 
     SetLogLevel(0)
@@ -80,6 +81,9 @@ def main():
     rec.SetWords(True)
 
     words: List[Dict] = []
+    max_seconds = float(args.max_seconds) if args.max_seconds else 0.0
+    processed_frames = 0
+    rate = wf.getframerate()
     while True:
         data = wf.readframes(4000)
         if len(data) == 0:
@@ -88,6 +92,9 @@ def main():
             res = json.loads(rec.Result())
             if "result" in res:
                 words.extend(res["result"])  # list of {word,start,end}
+        processed_frames += 4000
+        if max_seconds > 0 and processed_frames / float(rate) >= max_seconds:
+            break
     final = json.loads(rec.FinalResult())
     if "result" in final:
         words.extend(final["result"])

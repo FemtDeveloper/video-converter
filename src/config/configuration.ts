@@ -32,6 +32,7 @@ export interface AppConfig {
     backend: 'vosk' | 'whisper' | 'mock';
     whisperModel: string;
     voskModelPath: string;
+    voskModelPaths: Partial<Record<'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh', string>>;
     defaultStyle: string;
     fontFile: string;
     fontsDir: string;
@@ -72,10 +73,24 @@ export const configuration = (): AppConfig => ({
     const backendEnv = (process.env.ASR_BACKEND ?? 'mock').toLowerCase();
     const backend: 'vosk' | 'whisper' | 'mock' =
       backendEnv === 'vosk' || backendEnv === 'whisper' ? (backendEnv as 'vosk' | 'whisper') : 'mock';
+    const modelMap: Partial<Record<'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh', string>> = {};
+    const mEn = process.env.VOSK_MODEL_PATH_EN ?? '';
+    const mEs = process.env.VOSK_MODEL_PATH_ES ?? '';
+    const mPt = process.env.VOSK_MODEL_PATH_PT ?? '';
+    const mDe = process.env.VOSK_MODEL_PATH_DE ?? '';
+    const mHi = process.env.VOSK_MODEL_PATH_HI ?? '';
+    const mZh = process.env.VOSK_MODEL_PATH_ZH ?? '';
+    if (mEn) modelMap.en = mEn;
+    if (mEs) modelMap.es = mEs;
+    if (mPt) modelMap.pt = mPt;
+    if (mDe) modelMap.de = mDe;
+    if (mHi) modelMap.hi = mHi;
+    if (mZh) modelMap.zh = mZh;
     return {
       backend,
       whisperModel: process.env.WHISPER_MODEL ?? 'small',
       voskModelPath: process.env.VOSK_MODEL_PATH ?? '',
+      voskModelPaths: modelMap,
       defaultStyle: process.env.SUBS_STYLE ?? 'instagram',
       fontFile: process.env.CAPTION_FONT_FILE ?? '',
       fontsDir: process.env.CAPTION_FONTS_DIR ?? '',

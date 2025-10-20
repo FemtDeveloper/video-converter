@@ -104,4 +104,12 @@ export class CaptionizeVideoDto {
     message: 'karaokeScale must be between 0.5 and 2.0',
   })
   karaokeScale?: number;
+
+  // Idioma para la transcripción (default: 'en')
+  @IsOptional()
+  @IsString()
+  @IsIn(['auto', 'en', 'es', 'pt', 'de', 'hi', 'zh'], {
+    message: 'language must be one of: auto, en, es, pt, de, hi, zh',
+  })
+  language?: 'auto' | 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
 }

@@ -38,6 +38,7 @@ Body (multipart/form-data):
 - video (File, requerido): MP4/MOV.
 - style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color.
 - backend (Text, opcional): vosk | whisper | mock (por defecto vosk si está configurado).
+- language (Text, opcional): auto | en | es | pt | de | hi | zh. Idioma para la transcripción. Por defecto: auto (detección entre esos idiomas). Si no se reconoce, se devuelve aviso inmediato de "Transcripción no disponible".
 
 Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
 
