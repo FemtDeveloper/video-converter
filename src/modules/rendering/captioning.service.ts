@@ -937,7 +937,6 @@ export class CaptioningService {
       '-c:v', 'libx264',
       '-threads', '1',
       '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
       '-vf', filter,
     ];
 

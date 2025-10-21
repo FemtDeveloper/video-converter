@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
 import type { Response } from 'express';
 import { JobsService } from './jobs.service';
 import { ApiKeyGuard } from '../auth/api-key.guard';
@@ -46,12 +46,26 @@ export class JobsController {
   ) {
     this.tempBasePath = this.configService.getOrThrow('paths.temp', { infer: true });
     this.outputBasePath = this.configService.getOrThrow('paths.outputs', { infer: true });
+    // Ensure generic uploads dir exists for diskStorage
+    try {
+      const uploads = path.join(this.tempBasePath, 'uploads');
+      require('fs').mkdirSync(uploads, { recursive: true });
+    } catch {}
   }
 
   @Post('video-from-image')
   @HttpCode(202)
   @UseInterceptors(
-    FileInterceptor('image', { storage: memoryStorage(), limits: { fileSize: MAX_IMAGE_BYTES } }),
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: '/app/tmp/jobs/uploads',
+        filename: (_req, file, cb) => {
+          const safe = file.originalname.replace(/[^a-zA-Z0-9-_\.]/g, '_');
+          cb(null, `${Date.now()}-${safe}`);
+        },
+      }),
+      limits: { fileSize: MAX_IMAGE_BYTES },
+    }),
   )
   async enqueueImageToVideo(
     @UploadedFile() file: Express.Multer.File,
@@ -71,8 +85,9 @@ export class JobsController {
 
     const jobTempDir = path.join(this.tempBasePath, job.id);
     await fs.mkdir(jobTempDir, { recursive: true });
+    const uploadedPath = (file as any).path as string;
     const inputPath = path.join(jobTempDir, file.originalname.replace(/[^a-zA-Z0-9-_\.]/g, '_'));
-    await fs.writeFile(inputPath, file.buffer);
+    await fs.rename(uploadedPath, inputPath);
 
     await this.queueService.addJob({
       jobId: job.id,
@@ -90,7 +105,16 @@ export class JobsController {
   @Post('captionize')
   @HttpCode(202)
   @UseInterceptors(
-    FileInterceptor('video', { storage: memoryStorage(), limits: { fileSize: MAX_VIDEO_BYTES } }),
+    FileInterceptor('video', {
+      storage: diskStorage({
+        destination: '/app/tmp/jobs/uploads',
+        filename: (_req, file, cb) => {
+          const safe = file.originalname.replace(/[^a-zA-Z0-9-_\.]/g, '_');
+          cb(null, `${Date.now()}-${safe}`);
+        },
+      }),
+      limits: { fileSize: MAX_VIDEO_BYTES },
+    }),
   )
   async enqueueCaptionize(
     @UploadedFile() file: Express.Multer.File,
@@ -111,8 +135,9 @@ export class JobsController {
 
     const jobTempDir = path.join(this.tempBasePath, job.id);
     await fs.mkdir(jobTempDir, { recursive: true });
+    const uploadedPath = (file as any).path as string;
     const inputPath = path.join(jobTempDir, 'input.mp4');
-    await fs.writeFile(inputPath, file.buffer);
+    await fs.rename(uploadedPath, inputPath);
 
     await this.queueService.addJob({
       jobId: job.id,
