@@ -373,6 +373,73 @@ export class RenderingService {
     }
   }
 
+  async processImageToVideoForJob(options: {
+    jobId: string;
+    inputPath: string;
+    originalName: string;
+    mimeType: string;
+    dto: VideoFromImageDto;
+  }): Promise<void> {
+    await this.ensureDirectories();
+    const { jobId, inputPath, originalName, mimeType, dto } = options;
+
+    const durationSeconds = Math.min(dto.durationSeconds ?? 5, this.maxDurationSeconds);
+    const fps = dto.fps ?? 30;
+    const backgroundColor = dto.backgroundColor ?? '#000000';
+    const format: 'mp4' = dto.format ?? 'mp4';
+    const captionText = dto.captionText?.trim();
+    const preset = this.resolveDrawtextStyle(dto.style);
+    const captionFontSize = dto.fontSize ?? dto.captionFontSize ?? preset.fontSize;
+    const captionTextColor = dto.textColor ?? preset.textColor;
+    const bgColor = dto.bgColor ?? preset.bgColor;
+    const bgOpacity = dto.bgOpacity ?? preset.bgOpacity;
+    const captionOutlineColor = dto.outlineColor ?? preset.outlineColor;
+    const captionBorderWidth = dto.outlineWidth ?? preset.outlineWidth;
+    const captionPosition = dto.position ?? preset.position;
+
+    const outputFileName = dto.filename ?? this.buildOutputFileName(jobId, format);
+    const outputPath = path.join(this.outputBasePath, outputFileName);
+
+    try {
+      await this.runFfmpeg({
+        inputPath,
+        outputPath,
+        durationSeconds,
+        fps,
+        backgroundColor,
+        captionText,
+        captionFontSize,
+        captionTextColor,
+        bgColor,
+        bgOpacity,
+        outlineColor: captionOutlineColor,
+        borderWidth: captionBorderWidth,
+        position: captionPosition,
+        fillFrame: dto.fillFrame,
+        boxEnabled: dto.bgEnabled === true,
+      });
+
+      await fs.chmod(outputPath, 0o640);
+      const stats = await fs.stat(outputPath);
+      await this.jobsService.markCompleted({
+        jobId,
+        durationSeconds,
+        resultPath: outputPath,
+        outputMimeType: 'video/mp4',
+        outputSizeBytes: stats.size,
+      });
+    } catch (err) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      await this.jobsService.markFailed(jobId, e);
+      await this.safeUnlink(outputPath);
+      throw e;
+    } finally {
+      await this.safeUnlink(inputPath);
+      const jobTempDir = path.join(this.tempBasePath, jobId);
+      await this.safeRemoveDirectory(jobTempDir);
+    }
+  }
+
   private async runFfmpeg(options: {
     inputPath: string;
     outputPath: string;
@@ -425,7 +492,7 @@ export class RenderingService {
       : baseFilter;
 
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(inputPath)
+      const proc = ffmpeg(inputPath)
         .inputOptions(['-loop', '1'])
         .outputOptions([
           '-t',
@@ -434,6 +501,8 @@ export class RenderingService {
           String(fps),
           '-c:v',
           'libx264',
+          '-threads',
+          '1',
           '-pix_fmt',
           'yuv420p',
           '-movflags',
@@ -441,9 +510,11 @@ export class RenderingService {
           '-vf',
           filterWithCaption,
         ])
+        .on('start', (cmd: string) => this.logger.log(`ffmpeg start: ${cmd}`))
+        .on('stderr', (line: string) => this.logger.warn(`[ffmpeg] ${line}`))
         .on('error', (error) => reject(error))
-        .on('end', () => resolve())
-        .save(outputPath);
+        .on('end', () => resolve());
+      proc.save(outputPath);
     });
   }
 
@@ -462,14 +533,10 @@ export class RenderingService {
 
   private async safeRemoveDirectory(dirPath: string): Promise<void> {
     try {
-      await fs.rmdir(dirPath);
+      await fs.rm(dirPath, { recursive: true, force: true });
     } catch (err) {
-      const code =
-        err && typeof err === 'object' && 'code' in err ? err.code : undefined;
-      if (code !== 'ENOENT') {
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Failed to remove temp directory ${dirPath}: ${msg}`);
-      }
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Failed to remove temp directory ${dirPath}: ${msg}`);
     }
   }
 

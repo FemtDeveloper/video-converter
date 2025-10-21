@@ -516,6 +516,132 @@ export class CaptioningService {
     }
   }
 
+  async captionizeVideoForJob(params: {
+    jobId: string;
+    inputPath: string;
+    originalName: string;
+    mimeType: string;
+    options: {
+      style?:
+        | 'instagram'
+        | 'clean'
+        | 'instagram_plus'
+        | 'clean_plus'
+        | 'upper'
+        | 'caption_bar'
+        | 'outline_color'
+        | 'yellow_black'
+        | 'white_blue'
+        | 'white_black_yellow_outline'
+        | 'neon_green_black'
+        | 'red_white'
+        | 'blue_white'
+        | 'transparent_outline'
+        | 'minimal';
+      backendOverride?: 'vosk' | 'whisper' | 'mock';
+      fontSizeOverride?: number;
+      outlineColorHex?: string;
+      position?: 'top' | 'bottom';
+      textColorHex?: string;
+      bgColorHex?: string;
+      bgOpacity?: number;
+      bgEnabled?: boolean;
+      language: 'en' | 'es' | 'pt' | 'de' | 'hi' | 'zh';
+      karaoke?: boolean;
+      karaokeMode?: 'k' | 'kf' | 'ko';
+      karaokeOffsetMs?: number;
+      karaokeScale?: number;
+    };
+  }): Promise<void> {
+    await this.ensureDirectories();
+
+    const { jobId, inputPath, originalName, mimeType, options } = params;
+    const audioPath = path.join(this.tempBasePath, jobId, 'audio.wav');
+    const assPath = path.join(this.tempBasePath, jobId, 'captions.ass');
+
+    await fs.mkdir(path.join(this.tempBasePath, jobId), { recursive: true });
+
+    let outputPath: string | null = null;
+    let subtitleOutputPath: string | null = null;
+
+    try {
+      const durationSeconds = await this.getVideoDurationSeconds(inputPath);
+      await this.extractAudioToWav(inputPath, audioPath).catch(async () => {
+        // Si falla extracción de audio, generar silencio
+        await this.buildSilenceWav(durationSeconds, audioPath);
+      });
+
+      const transcription = await this.subtitleTranscriber.transcribe(audioPath, {
+        backend: options.backendOverride,
+        approximateDurationSeconds: durationSeconds,
+        language: options.language,
+      });
+
+      const segments = transcription.segments.length
+        ? transcription.segments
+        : [
+            {
+              start: 0,
+              end: Math.max(durationSeconds, 1),
+              text: 'Transcripcion no disponible',
+            },
+          ];
+
+      const resolvedStyle = this.resolveStyle(options.style);
+      const assContent = this.buildAssContent(
+        segments,
+        resolvedStyle,
+        {
+          fontSize: options.fontSizeOverride,
+          outlineColorHex: options.outlineColorHex,
+          textColorHex: options.textColorHex,
+          position: options.position,
+          bgColorHex: options.bgColorHex,
+          bgOpacity: options.bgOpacity,
+          bgEnabled: options.bgEnabled ?? false,
+        },
+        {
+          karaoke: options.karaoke === true,
+          words: transcription.words,
+          mode: options.karaokeMode ?? this.defaultKaraokeMode,
+          offsetMs: options.karaokeOffsetMs ?? 0,
+          scale: options.karaokeScale ?? 1,
+        },
+      );
+      await fs.writeFile(assPath, assContent, 'utf8');
+
+      const outputFileName = this.buildOutputFileName(jobId);
+      outputPath = path.join(this.outputBasePath, outputFileName);
+      subtitleOutputPath = path.join(this.outputBasePath, `${jobId}.ass`);
+
+      await this.burnSubtitles({ inputPath, assPath, outputPath });
+
+      await fs.copyFile(assPath, subtitleOutputPath);
+      await fs.chmod(outputPath, 0o640);
+      await fs.chmod(subtitleOutputPath, 0o640);
+
+      const stats = await fs.stat(outputPath);
+      await this.jobsService.markCompleted({
+        jobId,
+        durationSeconds,
+        resultPath: outputPath,
+        outputMimeType: 'video/mp4',
+        outputSizeBytes: stats.size,
+        subtitlePath: subtitleOutputPath,
+      });
+    } catch (error) {
+      if (outputPath) await this.safeUnlink(outputPath);
+      if (subtitleOutputPath) await this.safeUnlink(subtitleOutputPath);
+      await this.jobsService.markFailed(jobId, error as Error);
+      throw error;
+    } finally {
+      await this.safeUnlink(audioPath);
+      await this.safeUnlink(assPath);
+      await this.safeUnlink(inputPath);
+      await this.safeRemoveDirectory(path.join(this.tempBasePath, jobId));
+    }
+  }
+
   private async ensureDirectories(): Promise<void> {
     await fs.mkdir(this.tempBasePath, { recursive: true });
     await fs.mkdir(this.outputBasePath, { recursive: true });
@@ -554,12 +680,15 @@ export class CaptioningService {
     audioPath: string,
   ): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(inputPath)
-        .outputOptions(['-vn', '-acodec pcm_s16le', '-ar 16000', '-ac 1'])
+      const proc = ffmpeg(inputPath)
+        .outputOptions(['-vn', '-acodec pcm_s16le', '-ar 16000', '-ac 1', '-threads', '1'])
         .format('wav')
+        .on('start', (cmd: string) => this.logger.log(`ffmpeg start (extract): ${cmd}`))
+        .on('stderr', (line: string) => this.logger.warn(`[ffmpeg extract] ${line}`))
         .on('error', (error) => reject(error))
         .on('end', () => resolve())
-        .save(audioPath);
+      ;
+      proc.save(audioPath);
     });
   }
 
@@ -806,6 +935,7 @@ export class CaptioningService {
       '-preset', 'veryfast',
       '-crf', '20',
       '-c:v', 'libx264',
+      '-threads', '1',
       '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart',
       '-vf', filter,
@@ -815,11 +945,13 @@ export class CaptioningService {
     const audioOpts = hasAudio ? ['-c:a', 'copy'] : ['-an'];
 
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(options.inputPath)
+      const proc = ffmpeg(options.inputPath)
         .outputOptions([...baseOpts, ...audioOpts])
+        .on('start', (cmd: string) => this.logger.log(`ffmpeg start (burn): ${cmd}`))
+        .on('stderr', (line: string) => this.logger.warn(`[ffmpeg burn] ${line}`))
         .on('error', (error) => reject(error))
-        .on('end', () => resolve())
-        .save(options.outputPath);
+        .on('end', () => resolve());
+      proc.save(options.outputPath);
     });
   }
 
@@ -850,13 +982,11 @@ export class CaptioningService {
 
   private async safeRemoveDirectory(dirPath: string): Promise<void> {
     try {
-      await fs.rmdir(dirPath);
+      await fs.rm(dirPath, { recursive: true, force: true });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        this.logger.warn(
-          `Failed to remove temp directory ${dirPath}: ${(error as Error).message}`,
-        );
-      }
+      this.logger.warn(
+        `Failed to remove temp directory ${dirPath}: ${(error as Error).message}`,
+      );
     }
   }
 }

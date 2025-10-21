@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Job, JobStatus, JobType, Prisma } from '@prisma/client';
+import { Job, JobStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 interface CreateJobOptions {
   organizationId: string;
-  type: JobType;
+  type: 'IMAGE_TO_VIDEO' | 'VIDEO_CAPTION' | 'SLIDESHOW';
   requestPayload: Record<string, unknown>;
 }
 
@@ -35,6 +35,23 @@ export class JobsService {
 
     this.logger.log(`Created job ${job.id} for organization ${options.organizationId}`);
     return job;
+  }
+
+  async createQueuedJob(options: CreateJobOptions): Promise<Job> {
+    const job = await this.prisma.job.create({
+      data: {
+        organizationId: options.organizationId,
+        type: options.type,
+        status: JobStatus.QUEUED,
+        requestPayload: options.requestPayload as Prisma.InputJsonValue,
+      },
+    });
+    this.logger.log(`Queued job ${job.id} for organization ${options.organizationId}`);
+    return job;
+  }
+
+  async getJobById(jobId: string): Promise<Job | null> {
+    return this.prisma.job.findUnique({ where: { id: jobId } });
   }
 
   async markCompleted(options: CompleteJobOptions): Promise<void> {

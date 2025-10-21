@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { RenderingController } from './rendering.controller';
 import { RenderingService } from './rendering.service';
 import { JobsModule } from '../jobs/jobs.module';
 import { AuthModule } from '../auth/auth.module';
@@ -8,7 +7,7 @@ import { SubtitleTranscriberService } from './subtitle-transcriber.service';
 
 @Module({
   imports: [JobsModule, AuthModule],
-  controllers: [RenderingController],
+  controllers: [],
   providers: [RenderingService, CaptioningService, SubtitleTranscriberService],
   exports: [RenderingService, CaptioningService],
 })

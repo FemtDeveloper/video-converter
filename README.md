@@ -339,25 +339,26 @@ docker compose run --rm app npx prisma migrate deploy
 - URL `{{baseUrl}}/health`
 - Respuesta esperada: `status: ok`.
 
-### 2. Imagen -> Video con caption
+### 2. Encolar Imagen -> Video (asíncrono)
 
-1. `POST {{baseUrl}}/api/v1/video-from-image`
+1. `POST {{baseUrl}}/api/v1/jobs/video-from-image`
 2. Body `form-data`:
-   - `image` (File) -> selecciona la imagen.
-   - Opcionales: `durationSeconds`, `fps`, `captionText`, `textColor`, `bgColor`.
-3. Guarda la respuesta (`Save Response -> Save to a file`).
-4. Revisa cabeceras: `X-Job-Id` y `Content-Disposition`.
+   - `image` (File) → selecciona la imagen.
+   - Opcionales: `style`, `durationSeconds`, `fps`, `captionText`, `textColor`, `outlineColor`, `outlineWidth`, `fontSize`, `position`, `bgColor`, `bgOpacity`, `bgEnabled`.
+3. Respuesta: `202 Accepted` `{ jobId, status: 'queued' }`.
+4. Consulta el estado: `GET {{baseUrl}}/api/v1/jobs/{{jobId}}` y luego descarga con `GET {{baseUrl}}/api/v1/jobs/{{jobId}}/artifacts?file=video`.
 
-### 3. Video -> Video con subtitulos (captionize)
+### 3. Encolar Video -> Subtítulos hardsub (captionize, asíncrono)
 
-1. `POST {{baseUrl}}/api/v1/captionize`
+1. `POST {{baseUrl}}/api/v1/jobs/captionize`
 2. Body `form-data`:
-   - `video` (File) -> video original.
-   - `style` (Text, opcional) -> `instagram` o `clean`.
-   - `backend` (Text, opcional) -> `vosk`, `mock` o `whisper`.
-3. Guarda el MP4 devuelto y consulta las cabeceras:
-   - `X-Subtitles-Filename`: nombre del `.ass` generado en `OUTPUT_STORAGE_PATH`.
-   - `X-Transcript-Backend`: debe mostrar `vosk` si la transcripcion se ejecuto correctamente.
+   - `video` (File) → video original.
+   - `language` (Text, requerido) → `en|es|pt|de|hi|zh`.
+   - Opcionales: `style`, `textColor`, `outlineColor`, `fontSize`, `position`, `bgColor`, `bgOpacity`, `bgEnabled`, `karaoke`, `karaokeMode`, `karaokeOffsetMs`, `karaokeScale`.
+3. Respuesta: `202 Accepted` `{ jobId, status: 'queued' }`.
+4. Estado: `GET {{baseUrl}}/api/v1/jobs/{{jobId}}` → cuando `status` sea `COMPLETED`, descarga:
+   - Video: `GET {{baseUrl}}/api/v1/jobs/{{jobId}}/artifacts?file=video`
+   - Subtítulos `.ass`: `GET {{baseUrl}}/api/v1/jobs/{{jobId}}/artifacts?file=subtitle`
 
 #### Presets visuales disponibles
 
@@ -394,9 +395,9 @@ docker compose run --rm app npx prisma migrate deploy
 
 ## Notas adicionales
 
-- El endpoint `captionize` actualmente procesa de forma sincrona; para cargas altas considera usar una cola (BullMQ) y workers dedicados.
-- Los videos y subtitulos se guardan en `OUTPUT_STORAGE_PATH` (por defecto `data/outputs`). Configura respaldos si los deseas preservar a largo plazo.
-- Ajusta `MAX_VIDEO_UPLOAD_MB` segun la capacidad de tu maquina. Si el video supera este tamano, el endpoint lo rechazara.
+- Esta build usa cola asíncrona (BullMQ + Redis) con worker dedicado; los endpoints síncronos están deshabilitados en esta fase.
+- Los videos y subtítulos se guardan en `OUTPUT_STORAGE_PATH` (por defecto `data/outputs`). Configura respaldos si los deseas preservar a largo plazo.
+- Ajusta `MAX_VIDEO_UPLOAD_MB` según la capacidad de tu máquina. Si el video supera este tamaño, el endpoint lo rechazará.
 - Si cambias `SUBS_STYLE`, edita los presets en `src/modules/rendering/captioning.service.ts`.
 - Mantener el modelo Vosk dentro de `./models/vosk` permite reconstruir la imagen sin descargarlo cada vez. Si prefieres Whisper, instala el backend apropiado y cambia `ASR_BACKEND=whisper` y `WHISPER_MODEL`.
 

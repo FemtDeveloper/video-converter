@@ -1,6 +1,6 @@
 ## API Parameters Reference
 
-### POST /api/v1/video-from-image
+### POST /api/v1/jobs/video-from-image (async)
 
 Body (multipart/form-data):
 
@@ -23,7 +23,11 @@ Caption (superpuesto con drawtext):
 - bgOpacity (Text, opcional): 0–1; opacidad del fondo (ej. 0.6).
 - bgEnabled (Text, opcional): true|false. Por defecto false (no dibuja placa); si true, dibuja placa con bgColor/bgOpacity.
 
-Respuesta: MP4 (video/mp4). Cabeceras: X-Job-Id.
+Respuesta: 202 Accepted `{ jobId, status: 'queued' }`.
+
+Consultar estado y descargar:
+- `GET /api/v1/jobs/{jobId}` → JSON con `status` y metadatos
+- `GET /api/v1/jobs/{jobId}/artifacts?file=video` → descarga MP4
 
 Notas:
 - El video final siempre es 1080x1920 con la imagen centrada y relleno del color de fondo.
@@ -31,13 +35,13 @@ Notas:
 
 ---
 
-### POST /api/v1/captionize
+### POST /api/v1/jobs/captionize (async)
 
 Body (multipart/form-data):
 
 - video (File, requerido): MP4/MOV.
  - style (Text, opcional): instagram, clean, instagram_plus, clean_plus, upper, caption_bar, outline_color, yellow_black, white_blue, white_black_yellow_outline, neon_green_black, red_white, blue_white, transparent_outline, minimal.
-- backend (Text, opcional): vosk | whisper | mock (por defecto vosk si está configurado).
+- language (Text, requerido): en | es | pt | de | hi | zh.
 - language (Text, requerido): en | es | pt | de | hi | zh. Idioma para la transcripción. Si falta, la API responde 400 con el mensaje "language is required".
 
 Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
@@ -54,8 +58,12 @@ Overrides visuales del estilo (se aplican sobre la línea Style del preset ASS):
  - karaokeOffsetMs (Text, opcional): entero -1000..1000. Desplaza el resaltado (ms). Útil para ajustar si notas que el highlight va “tarde” o “temprano”.
  - karaokeScale (Text, opcional): factor 0.5–2.0. Escala la duración de cada palabra (1 = sin cambio).
 
-Respuesta: MP4 (video/mp4) con subtítulos quemados. Cabeceras: `X-Job-Id`, `X-Subtitles-Filename`, `X-Transcript-Backend`.
+Respuesta: 202 Accepted `{ jobId, status: 'queued' }`.
+
+Consultar estado y descargar:
+- `GET /api/v1/jobs/{jobId}` → JSON con `status` y rutas de salida
+- `GET /api/v1/jobs/{jobId}/artifacts?file=video|subtitle` → descarga MP4 o `.ass`
 
 Notas:
-- Para transcripción real en español, monta el modelo Vosk y define `ASR_BACKEND=vosk` y `VOSK_MODEL_PATH`.
-- Si el audio no coincide con el idioma del modelo, la transcripción puede ser vacía.
+- Para transcripción real en español, monta el/los modelos Vosk y define `ASR_BACKEND=vosk` y las variables `VOSK_MODEL_PATH_*`.
+- Si el idioma enviado no tiene modelo configurado o el audio carece de pista/voz, la transcripción puede ser "no disponible".

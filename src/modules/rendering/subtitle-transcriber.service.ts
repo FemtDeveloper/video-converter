@@ -25,6 +25,7 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
   private readonly whisperModel: string;
   private readonly voskModelPath: string;
   private readonly voskModelPaths: Partial<Record<SupportedLanguage, string>>;
+  private readonly pythonBin: string;
   private voskModel: any | null = null;
 
   constructor(private readonly configService: ConfigService<AppConfig>) {
@@ -35,6 +36,10 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
     this.voskModelPaths = (captioningConfig?.voskModelPaths ?? {}) as Partial<
       Record<SupportedLanguage, string>
     >;
+    const envPython = process.env.PYTHON_BIN?.trim();
+    this.pythonBin = envPython && envPython.length > 0
+      ? envPython
+      : (existsSync('/opt/venv/bin/python3') ? '/opt/venv/bin/python3' : 'python3');
   }
 
   async transcribe(
@@ -105,7 +110,7 @@ export class SubtitleTranscriberService implements OnModuleDestroy {
       const { spawn } = require('child_process');
       const scriptPath = '/app/scripts/asr_vosk.py';
       const args = ['--model-dir', modelPath, '--audio', audioPath];
-      const proc = spawn('python3', [scriptPath, ...args], {
+      const proc = spawn(this.pythonBin, [scriptPath, ...args], {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 

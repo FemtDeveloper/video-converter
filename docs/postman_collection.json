@@ -1,0 +1,119 @@
+{
+  "info": {
+    "name": "Video Converter API (Async Jobs)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Enqueue: Image -> Video",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "image", "type": "file", "src": "<select-an-image>" },
+            { "key": "style", "type": "text", "value": "instagram" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jobs/video-from-image",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","v1","jobs","video-from-image"]
+        }
+      }
+    },
+    {
+      "name": "Enqueue: Captionize",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "video", "type": "file", "src": "<select-a-video>" },
+            { "key": "language", "type": "text", "value": "es" },
+            { "key": "style", "type": "text", "value": "instagram" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jobs/captionize",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","v1","jobs","captionize"]
+        }
+      }
+    },
+    {
+      "name": "Get Job Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","v1","jobs","{{jobId}}"]
+        }
+      }
+    },
+    {
+      "name": "Download Artifact (video)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/artifacts?file=video",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","v1","jobs","{{jobId}}","artifacts"],
+          "query": [
+            { "key": "file", "value": "video" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Download Artifact (subtitle)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-api-key", "value": "{{apiKey}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/artifacts?file=subtitle",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","v1","jobs","{{jobId}}","artifacts"],
+          "query": [
+            { "key": "file", "value": "subtitle" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4100" },
+    { "key": "apiKey", "value": "<your-api-key>" },
+    { "key": "jobId", "value": "<fill-after-enqueue>" }
+  ]
+}
+
